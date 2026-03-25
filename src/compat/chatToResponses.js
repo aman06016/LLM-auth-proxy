@@ -1,5 +1,40 @@
 import { AppError } from "../http/errors.js";
 
+function isGpt5Family(model) {
+  return typeof model === "string" && /(^|\/)gpt-5([.-]|$)/i.test(model);
+}
+
+function normalizeMessages(body) {
+  if (Array.isArray(body?.messages) && body.messages.length > 0) {
+    return body.messages;
+  }
+
+  if (Array.isArray(body?.input) && body.input.length > 0) {
+    return body.input.map((item) => {
+      if (typeof item === "string") {
+        return { role: "user", content: item };
+      }
+      if (item && typeof item === "object") {
+        return {
+          role: item.role || "user",
+          content: item.content ?? item.text ?? ""
+        };
+      }
+      return { role: "user", content: "" };
+    });
+  }
+
+  if (typeof body?.input === "string" && body.input.trim()) {
+    return [{ role: "user", content: body.input }];
+  }
+
+  if (typeof body?.prompt === "string" && body.prompt.trim()) {
+    return [{ role: "user", content: body.prompt }];
+  }
+
+  return null;
+}
+
 function mapContent(content) {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
@@ -19,19 +54,25 @@ export function chatToResponsesPayload(body) {
   if (!body || typeof body !== "object") {
     throw new AppError(400, "Chat request body is required");
   }
-  if (!Array.isArray(body.messages) || body.messages.length === 0) {
+  const messages = normalizeMessages(body);
+  if (!messages) {
     throw new AppError(400, "messages must be a non-empty array");
   }
 
-  return {
+  const payload = {
     model: body.model,
-    input: body.messages.map((message) => ({
+    input: messages.map((message) => ({
       role: message.role,
       content: mapContent(message.content)
     })),
-    max_output_tokens: body.max_tokens,
-    temperature: body.temperature
+    max_output_tokens: body.max_tokens
   };
+
+  if (typeof body.temperature === "number" && Number.isFinite(body.temperature) && !isGpt5Family(body.model)) {
+    payload.temperature = body.temperature;
+  }
+
+  return payload;
 }
 
 function extractResponseText(responseBody) {

@@ -5,6 +5,7 @@ import { sendJson } from "../http/sendJson.js";
 import { AppError, isAppError } from "../http/errors.js";
 import { logger } from "../logging/logger.js";
 import { handleHealth } from "../routes/health.js";
+import { handleModels } from "../routes/models.js";
 import { handleResponsesRoute } from "../routes/responses.js";
 import { handleChatCompletionsRoute } from "../routes/chatCompletions.js";
 
@@ -14,6 +15,10 @@ export function createServer({ registry }) {
     try {
       if (req.method === "GET" && req.url === "/health") {
         return sendJson(res, 200, await handleHealth(registry));
+      }
+
+      if (req.method === "GET" && req.url === "/v1/models") {
+        return sendJson(res, 200, await handleModels(registry));
       }
 
       if (req.method === "POST" && req.url === "/v1/responses") {

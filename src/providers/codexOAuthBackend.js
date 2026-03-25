@@ -2,6 +2,23 @@ import { resolveCodexAccess } from "../auth/codexTokenRefresher.js";
 import { buildEndpoint, forwardJsonRequest } from "../upstream/forwardRequest.js";
 import os from "node:os";
 
+const ALLOWED_CODEX_FIELDS = [
+  "model",
+  "input",
+  "instructions",
+  "max_output_tokens",
+  "tools",
+  "tool_choice",
+  "parallel_tool_calls",
+  "prompt_cache_key",
+  "reasoning",
+  "text",
+  "metadata",
+  "previous_response_id",
+  "conversation",
+  "include"
+];
+
 export function createCodexOAuthBackend(config) {
   return {
     name: "codex-oauth",
@@ -36,8 +53,8 @@ export function createCodexOAuthBackend(config) {
 
 function normalizeCodexBody(body) {
   const nextBody = {
-    ...body,
-    instructions: body?.instructions ?? "",
+    ...pickAllowedFields(body),
+    instructions: typeof body?.instructions === "string" ? body.instructions : "",
     store: false,
     stream: body?.stream ?? true
   };
@@ -52,4 +69,14 @@ function normalizeCodexBody(body) {
   }
 
   return nextBody;
+}
+
+function pickAllowedFields(body) {
+  const picked = {};
+  for (const key of ALLOWED_CODEX_FIELDS) {
+    if (body?.[key] !== undefined) {
+      picked[key] = body[key];
+    }
+  }
+  return picked;
 }
