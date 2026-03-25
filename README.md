@@ -1,6 +1,8 @@
-# llm-auth-proxy
+# LLM-auth-proxy
 
-Local OpenAI-compatible proxy for two auth modes:
+`LLM-auth-proxy` is a local OpenAI-compatible proxy that lets existing tools and projects keep using standard OpenAI-style endpoints while authenticating upstream with either Codex OAuth or a normal API key.
+
+Supported auth modes:
 
 - `codex-oauth`
 - `api-key`
