@@ -1,0 +1,14 @@
+{
+  "name": "llm-auth-proxy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OpenAI-compatible local proxy for Codex OAuth and API-key backends",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
