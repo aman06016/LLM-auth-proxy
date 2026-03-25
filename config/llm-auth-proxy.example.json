@@ -9,7 +9,7 @@
       "type": "codex-oauth",
       "authFile": "~/.codex/auth.json",
       "baseUrl": "https://chatgpt.com/backend-api",
-      "responsesPath": "/responses"
+      "responsesPath": "/codex/responses"
     },
     "openai": {
       "type": "api-key",

@@ -15,7 +15,7 @@ export async function forwardJsonRequest({ url, method = "POST", headers = {}, b
 
   const contentType = response.headers.get("content-type") || "";
   const text = await response.text();
-  const maybeJson = contentType.includes("application/json") && text ? JSON.parse(text) : text;
+  const maybeJson = parseUpstreamBody(contentType, text);
 
   if (!response.ok) {
     throw new AppError(response.status, `Upstream request failed: ${response.statusText}`, maybeJson);
@@ -30,4 +30,50 @@ export async function forwardJsonRequest({ url, method = "POST", headers = {}, b
 
 export function buildEndpoint(baseUrl, pathname) {
   return joinUrl(baseUrl, pathname);
+}
+
+function parseUpstreamBody(contentType, text) {
+  if (!text) return "";
+  if (contentType.includes("application/json")) {
+    return JSON.parse(text);
+  }
+  if (contentType.includes("text/event-stream") || looksLikeSse(text)) {
+    return parseSseTerminalPayload(text);
+  }
+  return text;
+}
+
+function parseSseTerminalPayload(text) {
+  const chunks = text
+    .split(/\n\n+/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+
+  let lastEvent = null;
+  for (const chunk of chunks) {
+    const data = chunk
+      .split("\n")
+      .filter((line) => line.startsWith("data:"))
+      .map((line) => line.slice(5).trim())
+      .join("\n")
+      .trim();
+
+    if (!data || data === "[DONE]") continue;
+
+    try {
+      const event = JSON.parse(data);
+      if (event?.type === "response.completed" || event?.type === "response.done") {
+        return event.response ?? event;
+      }
+      lastEvent = event;
+    } catch {
+      // Ignore malformed SSE frames and keep the last valid event.
+    }
+  }
+
+  return lastEvent ?? text;
+}
+
+function looksLikeSse(text) {
+  return text.startsWith("event:") || text.startsWith("data:");
 }

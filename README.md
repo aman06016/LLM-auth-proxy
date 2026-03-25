@@ -20,6 +20,10 @@ Some projects only support an OpenAI-style `base_url` plus API key. This proxy l
 
 ## Quick start
 
+For a Codex OAuth-specific machine setup guide, read:
+
+- `./SETUP-CODEX-OAUTH.md`
+
 1. Copy the example config:
 
 ```bash
@@ -57,3 +61,4 @@ Environment overrides:
 - v1 does not support streaming.
 - v1 does not support embeddings, images, audio, or realtime.
 - For `chat/completions`, the proxy maps the request into a Responses-style payload and converts the response back into a chat-completions shape.
+- Codex OAuth requests are sent to the ChatGPT Codex backend path (`/backend-api/codex/responses`) with the same Codex-specific headers OpenClaw uses.
