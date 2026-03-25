@@ -144,6 +144,21 @@ curl -sS http://127.0.0.1:4318/health
 
 You should see both backend health and Codex auth availability.
 
+Test the models route:
+
+```bash
+curl -sS http://127.0.0.1:4318/v1/models
+```
+
+Expected result:
+
+- a JSON model list
+- currently includes the proxy-advertised Codex OAuth models like:
+  - `gpt-5.4`
+  - `gpt-5`
+  - `gpt-5-mini`
+  - `gpt-5-nano`
+
 Test the Responses API:
 
 ```bash
@@ -179,6 +194,30 @@ Expected result:
 
 - OpenAI-style `chat.completion` JSON
 - assistant message containing `Hello from the proxy.`
+
+## Supported APIs In v1
+
+These local endpoints are supported right now:
+
+- `GET /health`
+- `GET /v1/models`
+- `POST /v1/responses`
+- `POST /v1/chat/completions`
+
+Compatibility notes:
+
+- the proxy accepts chat-style request bodies and normalizes them for Codex
+- unsupported extra fields are ignored when possible
+- `temperature` is ignored for `gpt-5*` requests
+- `messages`, `input`, and `prompt` can all be used as the source prompt shape
+
+Not supported in v1:
+
+- streaming
+- embeddings
+- images
+- audio
+- realtime
 
 ## Use It In Other Projects
 

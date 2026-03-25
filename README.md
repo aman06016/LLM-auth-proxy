@@ -12,11 +12,39 @@ Some projects only support an OpenAI-style `base_url` plus API key. This proxy l
 ## v1 features
 
 - `GET /health`
+- `GET /v1/models`
 - `POST /v1/responses`
 - `POST /v1/chat/completions`
 - Codex OAuth auth-file loading and refresh
 - API-key backend support
 - Loopback bind by default
+
+## Supported API surface
+
+The local proxy currently supports:
+
+- `GET /health`
+  health summary for configured backends
+- `GET /v1/models`
+  lightweight model list for OpenAI-compatible clients that probe available models
+- `POST /v1/responses`
+  primary local Responses API surface
+- `POST /v1/chat/completions`
+  compatibility route for projects that still send chat-completions style bodies
+
+Compatibility behavior:
+
+- extra unsupported fields are ignored when possible
+- `temperature` is dropped for `gpt-5*` requests
+- `messages`, `input`, and `prompt` are normalized into a Codex-compatible request body
+
+Not supported in v1:
+
+- streaming responses
+- embeddings
+- images
+- audio
+- realtime APIs
 
 ## Quick start
 
@@ -58,7 +86,5 @@ Environment overrides:
 
 ## Notes
 
-- v1 does not support streaming.
-- v1 does not support embeddings, images, audio, or realtime.
 - For `chat/completions`, the proxy maps the request into a Responses-style payload and converts the response back into a chat-completions shape.
 - Codex OAuth requests are sent to the ChatGPT Codex backend path (`/backend-api/codex/responses`) with the same Codex-specific headers OpenClaw uses.
