@@ -50,6 +50,24 @@ function mapContent(content) {
   return "";
 }
 
+function mapResponseFormat(responseFormat) {
+  if (!responseFormat || typeof responseFormat !== "object") return undefined;
+
+  if (responseFormat.type === "json_schema" && responseFormat.json_schema) {
+    const schemaConfig = responseFormat.json_schema;
+    return {
+      format: {
+        type: "json_schema",
+        name: schemaConfig.name || "response",
+        strict: schemaConfig.strict ?? true,
+        schema: schemaConfig.schema || {}
+      }
+    };
+  }
+
+  return undefined;
+}
+
 export function chatToResponsesPayload(body) {
   if (!body || typeof body !== "object") {
     throw new AppError(400, "Chat request body is required");
@@ -70,6 +88,11 @@ export function chatToResponsesPayload(body) {
 
   if (typeof body.temperature === "number" && Number.isFinite(body.temperature) && !isGpt5Family(body.model)) {
     payload.temperature = body.temperature;
+  }
+
+  const textConfig = mapResponseFormat(body.response_format);
+  if (textConfig) {
+    payload.text = textConfig;
   }
 
   return payload;
