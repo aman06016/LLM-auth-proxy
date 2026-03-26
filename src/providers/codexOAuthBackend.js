@@ -1,5 +1,5 @@
 import { resolveCodexAccess } from "../auth/codexTokenRefresher.js";
-import { buildEndpoint, forwardJsonRequest } from "../upstream/forwardRequest.js";
+import { buildEndpoint, forwardJsonRequest, forwardStreamRequest } from "../upstream/forwardRequest.js";
 import os from "node:os";
 
 const ALLOWED_CODEX_FIELDS = [
@@ -34,7 +34,7 @@ export function createCodexOAuthBackend(config) {
     },
     async forwardResponses(body) {
       const auth = await resolveCodexAccess(config);
-      return forwardJsonRequest({
+      const request = {
         url: buildEndpoint(config.baseUrl, config.responsesPath || "/responses"),
         headers: {
           "content-type": "application/json",
@@ -46,7 +46,13 @@ export function createCodexOAuthBackend(config) {
           ...(auth.accountId ? { "chatgpt-account-id": auth.accountId } : {})
         },
         body: normalizeCodexBody(body)
-      });
+      };
+
+      if (body?.stream === true) {
+        return forwardStreamRequest(request);
+      }
+
+      return forwardJsonRequest(request);
     }
   };
 }

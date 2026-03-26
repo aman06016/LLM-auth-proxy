@@ -1,4 +1,5 @@
 import { AppError } from "../http/errors.js";
+import { Readable } from "node:stream";
 
 function joinUrl(baseUrl, pathname) {
   const trimmedBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
@@ -25,6 +26,27 @@ export async function forwardJsonRequest({ url, method = "POST", headers = {}, b
     status: response.status,
     headers: response.headers,
     body: maybeJson
+  };
+}
+
+export async function forwardStreamRequest({ url, method = "POST", headers = {}, body }) {
+  const response = await fetch(url, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    const contentType = response.headers.get("content-type") || "";
+    const text = await response.text();
+    const maybeJson = parseUpstreamBody(contentType, text);
+    throw new AppError(response.status, `Upstream request failed: ${response.statusText}`, maybeJson);
+  }
+
+  return {
+    status: response.status,
+    headers: response.headers,
+    bodyStream: toNodeReadable(response.body)
   };
 }
 
@@ -76,4 +98,12 @@ function parseSseTerminalPayload(text) {
 
 function looksLikeSse(text) {
   return text.startsWith("event:") || text.startsWith("data:");
+}
+
+function toNodeReadable(body) {
+  if (!body) return Readable.from([]);
+  if (typeof body.pipe === "function") {
+    return body;
+  }
+  return Readable.fromWeb(body);
 }

@@ -2,6 +2,7 @@ import http from "node:http";
 import { randomUUID } from "node:crypto";
 import { readJsonBody } from "../http/readJsonBody.js";
 import { sendJson } from "../http/sendJson.js";
+import { sendStream } from "../http/sendStream.js";
 import { AppError, isAppError } from "../http/errors.js";
 import { logger } from "../logging/logger.js";
 import { handleHealth } from "../routes/health.js";
@@ -24,6 +25,9 @@ export function createServer({ registry }) {
       if (req.method === "POST" && req.url === "/v1/responses") {
         const body = await readJsonBody(req);
         const result = await handleResponsesRoute(registry, body);
+        if (result.bodyStream) {
+          return sendStream(res, result.status || 200, result.headers, result.bodyStream);
+        }
         return sendJson(res, result.status || 200, result.body);
       }
 

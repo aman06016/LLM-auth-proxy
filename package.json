@@ -5,6 +5,7 @@
   "type": "module",
   "description": "OpenAI-compatible local proxy for Codex OAuth and API-key backends",
   "scripts": {
+    "test": "node --test",
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
   },

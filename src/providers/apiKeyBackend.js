@@ -1,5 +1,5 @@
 import { AppError } from "../http/errors.js";
-import { buildEndpoint, forwardJsonRequest } from "../upstream/forwardRequest.js";
+import { buildEndpoint, forwardJsonRequest, forwardStreamRequest } from "../upstream/forwardRequest.js";
 
 function getApiKey(config) {
   const key = config.apiKey || process.env[config.apiKeyEnv || "OPENAI_API_KEY"];
@@ -22,15 +22,21 @@ export function createApiKeyBackend(config) {
       };
     },
     async forwardResponses(body) {
-      return forwardJsonRequest({
+      const request = {
         url: buildEndpoint(config.baseUrl, "/responses"),
         headers: {
           "content-type": "application/json",
-          "accept": "application/json",
+          "accept": body?.stream === true ? "text/event-stream" : "application/json",
           "authorization": `Bearer ${getApiKey(config)}`
         },
         body
-      });
+      };
+
+      if (body?.stream === true) {
+        return forwardStreamRequest(request);
+      }
+
+      return forwardJsonRequest(request);
     },
     async forwardChatCompletions(body) {
       return forwardJsonRequest({
